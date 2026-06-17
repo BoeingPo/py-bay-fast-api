@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fastapi_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-appuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apppassword}
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-appuser} -d ${POSTGRES_DB:-appdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  dynamodb-local:
+    image: amazon/dynamodb-local:1.24.0
+    container_name: fastapi_dynamodb
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "java -version 2>&1 | grep -q openjdk && echo ok || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin
+    container_name: fastapi_dynamodb_admin
+    environment:
+      DYNAMO_ENDPOINT: http://dynamodb-local:8000
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      AWS_REGION: us-east-1
+    ports:
+      - "8001:8001"
+    depends_on:
+      - dynamodb-local
+
+volumes:
+  postgres_data:

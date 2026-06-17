@@ -1,0 +1,234 @@
+{
+  "info": {
+    "name": "py-bay-fast-api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "concert_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "booking_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "item_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Concerts",
+      "item": [
+        {
+          "name": "List Concerts",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/concerts/"
+          }
+        },
+        {
+          "name": "Get Concert",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/concerts/{{concert_id}}"
+          }
+        },
+        {
+          "name": "Create Concert",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) { pm.collectionVariables.set('concert_id', json.id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/concerts/",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Summer Vibes Festival\",\n  \"venue\": \"Seoul Olympic Stadium\",\n  \"date\": \"2026-08-01T19:00:00\",\n  \"total_seats\": 100,\n  \"price\": 75.00\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Book Seats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) { pm.collectionVariables.set('booking_id', json.id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/concerts/{{concert_id}}/book",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"seats_count\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "List Bookings",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/bookings/"
+          }
+        },
+        {
+          "name": "List Bookings by User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/bookings/?user_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["bookings", ""],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Bookings by Concert",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/bookings/?concert_id={{concert_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["bookings", ""],
+              "query": [
+                {
+                  "key": "concert_id",
+                  "value": "{{concert_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Booking",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/bookings/{{booking_id}}"
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/bookings/{{booking_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Items (PostgreSQL)",
+      "item": [
+        {
+          "name": "List Items",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/items/"
+          }
+        },
+        {
+          "name": "Get Item",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/items/{{item_id}}"
+          }
+        },
+        {
+          "name": "Create Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) { pm.collectionVariables.set('item_id', json.id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/items/",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sample Item\",\n  \"description\": \"A test item\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Item",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/items/{{item_id}}"
+          }
+        }
+      ]
+    }
+  ]
+}
