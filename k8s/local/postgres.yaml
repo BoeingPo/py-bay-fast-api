@@ -1,0 +1,47 @@
+# Minimal Postgres for minikube/local dev only — no persistence, single replica.
+# This is intentionally a smaller copy of py-bay-fast-api-gitops/postgres/postgres.yaml,
+# kept here so this repo's `make dev-up` doesn't depend on a sibling repo being checked out.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: py-bay-fast-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "appuser"
+            - name: POSTGRES_DB
+              value: "appdb"
+            - name: POSTGRES_PASSWORD
+              value: "apppassword"
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "appuser", "-d", "appdb"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: py-bay-fast-api
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

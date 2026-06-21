@@ -1,0 +1,36 @@
+# DynamoDB Local for minikube/local dev only — in-memory, no persistence.
+# Intentionally a copy of py-bay-fast-api-gitops/dynamodb-local/dynamodb-local.yaml,
+# kept here so this repo's `make dev-up` doesn't depend on a sibling repo being checked out.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynamodb-local
+  namespace: py-bay-fast-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dynamodb-local
+  template:
+    metadata:
+      labels:
+        app: dynamodb-local
+    spec:
+      containers:
+        - name: dynamodb-local
+          image: amazon/dynamodb-local:1.24.0
+          args: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dynamodb-local
+  namespace: py-bay-fast-api
+spec:
+  selector:
+    app: dynamodb-local
+  ports:
+    - port: 8000
+      targetPort: 8000

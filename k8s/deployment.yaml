@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: py-bay-fast-api
+  namespace: py-bay-fast-api
+  labels:
+    app: py-bay-fast-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: py-bay-fast-api
+  template:
+    metadata:
+      labels:
+        app: py-bay-fast-api
+    spec:
+      containers:
+        - name: py-bay-fast-api
+          image: boeingpo/py-bay-fast-api:latest # replace with your registry path + tag, e.g. registry.example.com/py-bay-fast-api:1.0.0
+          ports:
+            - containerPort: 8000
+          env:
+            # non-secret config — mirrors app/config.py Settings field names (case-insensitive)
+            - name: POSTGRES_USER
+              value: "appuser"
+            - name: POSTGRES_DB
+              value: "appdb"
+            - name: POSTGRES_HOST
+              value: "postgres" # Service name of the Postgres pod in-cluster, not localhost
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: DYNAMODB_ENDPOINT
+              value: "http://dynamodb-local:8000" # Service name of the DynamoDB Local pod, or swap for real AWS DynamoDB
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
+            - name: JWT_EXPIRE_MINUTES
+              value: "1440"
+            # secrets — create with: kubectl create secret generic py-bay-fast-api-secrets
+            #   --from-literal=postgres-password=... --from-literal=jwt-secret=...
+            #   --from-literal=aws-access-key-id=... --from-literal=aws-secret-access-key=...
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: py-bay-fast-api-secrets
+                  key: postgres-password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: py-bay-fast-api-secrets
+                  key: jwt-secret
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: py-bay-fast-api-secrets
+                  key: aws-access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: py-bay-fast-api-secrets
+                  key: aws-secret-access-key
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
