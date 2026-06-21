@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: py-bay-fast-api
+  namespace: py-bay-fast-api
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: "bay-api-bo.k3s.porrapatbo.site"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: py-bay-fast-api
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - bay-api-bo.k3s.porrapatbo.site
+      secretName: py-bay-fast-api-tls
