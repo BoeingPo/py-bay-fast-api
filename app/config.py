@@ -21,8 +21,12 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = "local"
     aws_default_region: str = "us-east-1"
 
-    # CORS — add the deployed frontend origin here once ts-preact-bay is live
-    cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    # CORS — localhost for dev, bay-preact-bo for the deployed ts-preact-bay frontend
+    cors_origins: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://bay-preact-bo.k3s.porrapatbo.site",
+    ]
 
     # Auth cookie — flip to True once served over HTTPS in production
     cookie_secure: bool = False
