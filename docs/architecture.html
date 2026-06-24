@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>py-bay-fast-api — Clean Architecture</title>
+<style>
+  :root {
+    --entities: #0f766e;
+    --entities-bg: #ccfbf1;
+    --usecases: #1d4ed8;
+    --usecases-bg: #dbeafe;
+    --adapters: #7c3aed;
+    --adapters-bg: #ede9fe;
+    --infra: #57534e;
+    --infra-bg: #f1f0ee;
+    --postgres: #2563eb;
+    --dynamo: #ea580c;
+    --bg: #faf9f7;
+    --ink: #1c1917;
+    --muted: #6b6864;
+    --card: #ffffff;
+    --border: #e7e4e0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.45;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  header { text-align: center; margin-bottom: 48px; }
+  header h1 { font-size: 28px; margin: 0 0 6px; }
+  header p { color: var(--muted); margin: 0; font-size: 15px; }
+  header code { background: var(--infra-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+  h2 { font-size: 18px; margin: 0 0 4px; }
+  .section-sub { color: var(--muted); font-size: 13px; margin: 0 0 20px; }
+  section { margin-bottom: 56px; }
+
+  /* ---- Concentric circle diagram ---- */
+  .circle-section { display: flex; gap: 40px; align-items: center; flex-wrap: wrap; }
+  .circle-diagram { position: relative; width: 480px; height: 480px; flex-shrink: 0; margin: 0 auto; }
+  .ring {
+    position: absolute;
+    border-radius: 50%;
+    text-align: center;
+  }
+  .ring-infra    { width: 480px; height: 480px; top: 0;   left: 0;   background: var(--infra-bg); }
+  .ring-adapters { width: 360px; height: 360px; top: 60px; left: 60px; background: var(--adapters-bg); }
+  .ring-usecases { width: 240px; height: 240px; top: 120px; left: 120px; background: var(--usecases-bg); }
+  .ring-entities {
+    width: 120px; height: 120px; top: 180px; left: 180px;
+    background: var(--entities);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ring-label {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+  }
+  .ring-label .name {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .ring-label .ex {
+    display: block;
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .ring-infra .ring-label .name    { color: var(--infra); }
+  .ring-adapters .ring-label .name { color: var(--adapters); }
+  .ring-usecases .ring-label .name { color: var(--usecases); }
+  .ring-entities .name { color: white; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .circle-arrow {
+    position: absolute;
+    font-size: 20px;
+    color: var(--muted);
+  }
+  .circle-arrow.top    { top: -30px; left: 50%; transform: translateX(-50%) rotate(90deg); }
+  .circle-arrow.bottom { bottom: -30px; left: 50%; transform: translateX(-50%) rotate(-90deg); }
+
+  .dependency-caption {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 14px;
+  }
+
+  .legend { flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 12px; }
+  .legend-group {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--infra);
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+  .legend-group.entities { border-left-color: var(--entities); }
+  .legend-group.usecases { border-left-color: var(--usecases); }
+  .legend-group.adapters { border-left-color: var(--adapters); }
+  .legend-group.infra    { border-left-color: var(--infra); }
+  .legend-label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 9px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+    color: white;
+  }
+  .legend-group.entities .legend-label { background: var(--entities); }
+  .legend-group.usecases .legend-label { background: var(--usecases); }
+  .legend-group.adapters .legend-label { background: var(--adapters); }
+  .legend-group.infra .legend-label    { background: var(--infra); }
+  .legend-desc { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .chip b { font-family: -apple-system, sans-serif; font-weight: 600; }
+
+  /* ---- Flow diagrams ---- */
+  .flows { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 880px) { .flows { grid-template-columns: 1fr; } }
+  .flow-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .flow-title { font-size: 14px; font-weight: 700; margin: 0 0 2px; }
+  .flow-sub { font-size: 12px; color: var(--muted); margin: 0 0 16px; }
+  .flow-steps { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    font-size: 13px;
+  }
+  .step .tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    color: white;
+    white-space: nowrap;
+  }
+  .step .label code { font-size: 12px; }
+  .step.entities { background: var(--entities-bg); }
+  .step.usecases { background: var(--usecases-bg); }
+  .step.adapters { background: var(--adapters-bg); }
+  .step.infra { background: var(--infra-bg); }
+  .step .tag.t-entities { background: var(--entities); }
+  .step .tag.t-usecases { background: var(--usecases); }
+  .step .tag.t-adapters { background: var(--adapters); }
+  .step .tag.t-infra { background: var(--infra); }
+  .flow-arrow { text-align: center; color: var(--muted); font-size: 15px; padding: 2px 0; }
+
+  .store-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    color: white;
+    margin-left: 4px;
+  }
+  .store-badge.postgres { background: var(--postgres); }
+  .store-badge.dynamo { background: var(--dynamo); }
+
+  /* ---- Endpoint table ---- */
+  table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+  th, td { text-align: left; padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--border); }
+  th { background: #f5f3f0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  tr:last-child td { border-bottom: none; }
+  td code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+  .method { font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 5px; color: white; }
+  .m-get { background: #0ea5e9; }
+  .m-post { background: #16a34a; }
+  .m-delete { background: #dc2626; }
+
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>py-bay-fast-api — Clean Architecture</h1>
+    <p>Generated locally from the actual source under <code>app/</code> — not a generic template.</p>
+  </header>
+
+  <section>
+    <h2>Layers &amp; the Dependency Rule</h2>
+    <p class="section-sub">Outer rings depend inward on inner rings — never the reverse. Entities know nothing about FastAPI, SQLAlchemy, or boto3.</p>
+    <div class="circle-section">
+
+      <div class="circle-diagram">
+        <span class="circle-arrow top">→</span>
+        <div class="ring ring-infra">
+          <div class="ring-label">
+            <span class="name">Frameworks &amp; Drivers</span>
+            <span class="ex">main.py, postgres.py, dynamo.py, auth.py</span>
+          </div>
+        </div>
+        <div class="ring ring-adapters">
+          <div class="ring-label">
+            <span class="name">Interface Adapters</span>
+            <span class="ex">controllers/, repositories/</span>
+          </div>
+        </div>
+        <div class="ring ring-usecases">
+          <div class="ring-label">
+            <span class="name">Use Cases</span>
+            <span class="ex">UserUseCases, ConcertUseCases, BookingUseCases</span>
+          </div>
+        </div>
+        <div class="ring ring-entities">
+          <span class="name">Entities</span>
+        </div>
+        <span class="circle-arrow bottom">→</span>
+      </div>
+
+      <div class="legend">
+
+        <div class="legend-group infra">
+          <span class="legend-label">Frameworks &amp; Drivers</span>
+          <p class="legend-desc">FastAPI app wiring, DB engines/sessions, JWT &amp; password hashing, settings</p>
+          <div class="chips">
+            <div class="chip"><b>main.py</b> — app, routers, startup</div>
+            <div class="chip"><b>infrastructure/db/postgres.py</b> — engine, SessionLocal, get_db</div>
+            <div class="chip"><b>infrastructure/db/dynamo.py</b> — get_table, serialize/deserialize</div>
+            <div class="chip"><b>infrastructure/auth.py</b> — JWT, password hashing, get_current_user</div>
+            <div class="chip"><b>config.py</b> — Settings (pydantic-settings)</div>
+          </div>
+        </div>
+
+        <div class="legend-group adapters">
+          <span class="legend-label">Interface Adapters</span>
+          <p class="legend-desc">Translate between the outside world (HTTP, DB drivers) and use cases</p>
+          <div class="chips">
+            <div class="chip"><b>controllers/</b> health.py, users.py, concerts.py, bookings.py</div>
+            <div class="chip"><b>UserRepository</b> <span class="store-badge postgres">Postgres</span></div>
+            <div class="chip"><b>ConcertRepository</b> <span class="store-badge dynamo">DynamoDB</span></div>
+            <div class="chip"><b>BookingRepository</b> <span class="store-badge dynamo">DynamoDB</span></div>
+          </div>
+        </div>
+
+        <div class="legend-group usecases">
+          <span class="legend-label">Use Cases <span style="opacity:.7; font-weight:500;">(aka &quot;service layer&quot;)</span></span>
+          <p class="legend-desc">Application-specific business rules, orchestrate repositories</p>
+          <div class="chips">
+            <div class="chip"><b>UserUseCases</b> — register, authenticate</div>
+            <div class="chip"><b>ConcertUseCases</b> — list, get, create</div>
+            <div class="chip"><b>BookingUseCases</b> — book_seats, cancel_booking, get/list</div>
+          </div>
+        </div>
+
+        <div class="legend-group entities">
+          <span class="legend-label">Entities</span>
+          <p class="legend-desc">Enterprise-wide rules — the only layer with zero outward dependencies</p>
+          <div class="chips">
+            <div class="chip"><b>User</b> — SQLAlchemy model (id, email, name, hashed_password, created_at)</div>
+            <div class="chip">Concert / Booking — plain dicts, no ORM entity (DynamoDB-native)</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <p class="dependency-caption">Dependency Rule — arrows point inward: Frameworks → Adapters → Use Cases → Entities, never the reverse.</p>
+  </section>
+
+  <section>
+    <h2>Request Flows</h2>
+    <p class="section-sub">Same layering, two different data stores — this is the actual call chain for one endpoint in each bounded context.</p>
+    <div class="flows">
+
+      <div class="flow-card">
+        <p class="flow-title">POST /users/register <span class="store-badge postgres">Postgres</span></p>
+        <p class="flow-sub">Auth &amp; user profile — relational, needs uniqueness + transactions</p>
+        <div class="flow-steps">
+          <div class="step adapters"><span class="tag t-adapters">Controller</span><span class="label"><code>controllers/users.py → register()</code></span></div>
+          <div class="flow-arrow">↓</div>
+          <div class="step usecases"><span class="tag t-usecases">Use Case</span><span class="label"><code>UserUseCases.register()</code></span></div>
+          <div class="flow-arrow">↓</div>
+          <div class="step adapters"><span class="tag t-adapters">Repository</span><span class="label"><code>UserRepository.create()</code></span></div>
+          <div class="flow-arrow">↓</div>
+          <div class="step entities"><span class="tag t-entities">Entity</span><span class="label"><code>User</code> (SQLAlchemy model)</span></div>
+          <div class="flow-arrow">↓</div>
+          <div class="step infra"><span class="tag t-infra">Infra</span><span class="label"><code>postgres.py</code> — engine.commit() → <code>users</code> table</span></div>
+        </div>
+      </div>
+
+      <div class="flow-card">
+        <p class="flow-title">POST /concerts/{id}/book <span class="store-badge dynamo">DynamoDB</span></p>
+        <p class="flow-sub">Seat booking — atomic conditional update, no transactions needed</p>
+        <div class="flow-steps">
+          <div class="step adapters"><span class="tag t-adapters">Controller</span><span class="label"><code>controllers/bookings.py → book_seats()</code></span></div>
+          <div class="flow-arrow">↓</div>
+          <div class="step usecases"><span class="tag t-usecases">Use Case</span><span class="label"><code>BookingUseCases.book_seats()</code></span></div>
+          <div class="flow-arrow">↓</div>
+          <div class="step adapters"><span class="tag t-adapters">Repository</span><span class="label"><code>ConcertRepository.decrement_seats()</code> + <code>BookingRepository.create()</code></span></div>
+          <div class="flow-arrow">↓</div>
+          <div class="step infra"><span class="tag t-infra">Infra</span><span class="label"><code>dynamo.py</code> — ConditionExpression on <code>Concerts</code> / put_item on <code>Bookings</code></span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Endpoint Map</h2>
+    <p class="section-sub">Every route, traced down to the repository (and store) it ultimately depends on.</p>
+    <table>
+      <thead>
+        <tr><th>Endpoint</th><th>Controller</th><th>Use Case</th><th>Repository</th><th>Store</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="method m-get">GET</span> <code>/health</code></td><td>health.py</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td><span class="method m-post">POST</span> <code>/users/register</code></td><td>users.py</td><td>UserUseCases.register</td><td>UserRepository</td><td><span class="store-badge postgres">Postgres</span></td></tr>
+        <tr><td><span class="method m-post">POST</span> <code>/users/login</code></td><td>users.py</td><td>UserUseCases.authenticate</td><td>UserRepository</td><td><span class="store-badge postgres">Postgres</span></td></tr>
+        <tr><td><span class="method m-get">GET</span> <code>/users/me</code></td><td>users.py</td><td>— (auth.get_current_user)</td><td>—</td><td><span class="store-badge postgres">Postgres</span></td></tr>
+        <tr><td><span class="method m-get">GET</span> <code>/concerts/</code></td><td>concerts.py</td><td>ConcertUseCases.list_concerts</td><td>ConcertRepository</td><td><span class="store-badge dynamo">DynamoDB</span></td></tr>
+        <tr><td><span class="method m-get">GET</span> <code>/concerts/{id}</code></td><td>concerts.py</td><td>ConcertUseCases.get_concert</td><td>ConcertRepository</td><td><span class="store-badge dynamo">DynamoDB</span></td></tr>
+        <tr><td><span class="method m-post">POST</span> <code>/concerts/</code></td><td>concerts.py</td><td>ConcertUseCases.create_concert</td><td>ConcertRepository</td><td><span class="store-badge dynamo">DynamoDB</span></td></tr>
+        <tr><td><span class="method m-post">POST</span> <code>/concerts/{id}/book</code></td><td>bookings.py</td><td>BookingUseCases.book_seats</td><td>ConcertRepository + BookingRepository</td><td><span class="store-badge dynamo">DynamoDB</span></td></tr>
+        <tr><td><span class="method m-get">GET</span> <code>/bookings/</code></td><td>bookings.py</td><td>BookingUseCases.list_bookings</td><td>BookingRepository</td><td><span class="store-badge dynamo">DynamoDB</span></td></tr>
+        <tr><td><span class="method m-get">GET</span> <code>/bookings/{id}</code></td><td>bookings.py</td><td>BookingUseCases.get_booking</td><td>BookingRepository</td><td><span class="store-badge dynamo">DynamoDB</span></td></tr>
+        <tr><td><span class="method m-delete">DELETE</span> <code>/bookings/{id}</code></td><td>bookings.py</td><td>BookingUseCases.cancel_booking</td><td>BookingRepository + ConcertRepository</td><td><span class="store-badge dynamo">DynamoDB</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>py-bay-fast-api/docs/architecture.html — static, offline, generated from source on 2026-06-21</footer>
+
+</div>
+</body>
+</html>

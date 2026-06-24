@@ -5,7 +5,7 @@ NS    := py-bay-fast-api
 .PHONY: up down restart logs ps \
         pg-shell dynamo-tables \
         pg-ready dynamo-ready \
-        dev \
+        dev seed test \
         dev-up dev-secret dev-build dev-deploy dev-down dev-logs
 
 # ── Docker (databases) ────────────────────────────────────────────────────────
@@ -54,6 +54,13 @@ dynamo-tables:
 
 dev:
 	uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
+
+seed:
+	uv run python scripts/seed_concerts.py
+
+test:
+	@$(MAKE) up
+	uv run pytest -v
 
 # ── Local Minikube ────────────────────────────────────────────────────────────
 # Self-contained: deploys Postgres + DynamoDB Local into minikube too, so this
