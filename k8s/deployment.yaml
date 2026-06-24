@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: py-bay-fast-api
-          image: boeingpo/py-bay-fast-api:v.1.0.0
+          image: boeingpo/py-bay-fast-api:v.1.0.1
           ports:
             - containerPort: 8000
           env:
